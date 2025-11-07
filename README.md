@@ -4,9 +4,9 @@ This repository contains the full training pipeline for a compact GPT-style lang
 
 ## Project Overview
 
-- **Language:** Tatar (low-resource, ~5?million speakers)
+- **Language:** Tatar (low-resource, ~5 million speakers)
 - **Architecture:** Decoder-only Transformer (GPT)
-- **Parameter count:** ~23?M
+- **Parameter count:** ~23M
 - **Context length:** 256 tokens
 - **Tokenizer:** Byte-Pair Encoding (vocab size 8192, trained from scratch)
 - **Hardware target:** Apple MacBook Pro M1 Pro (MPS acceleration)
@@ -60,96 +60,7 @@ This repository contains the full training pipeline for a compact GPT-style lang
    - Quick CLI smoke test: `python quick_test.py`
    - Rich notebook demo: `demo_inference.ipynb`
 
-## Training Snapshot (M1 Pro run)
-
-- Effective batch size: 128 tokens (32 ? grad accumulation 4)
-- Training time: ~6?hours for 10?000 iterations (?14 epochs over corpus)
-- Best validation loss: **8.53** (step 500)
-- Throughput: ~11–12?k tokens/sec on MPS during steady state
-
-> Loss remains relatively high because of limited model capacity and the small hardware budget. Longer training or a larger model will improve perplexity.
-
-## Sample Generations
-
-Using `models/best_model.pt` and the trained tokenizer:
-
-```
-Prompt: Кояшлы к?нд? Казан урамнары турында с?йл?п бир.
-? Output: Ко яш лы к?нд? Казан урам нары турында с?йл?п бир . . ??м
-
-Prompt: Татар язучысы Габдулла Тукай турында н?рс? бел?се??
-? Output: Татар язучы сы Габдулла Тукай турында н?рс? бел? се? ? . , .
-
-Prompt: Татарларны? милли ашлары нинди?
-? Output: Татар ларны? милли аш лары нинди ? ? . . ел
-```
-
-The tokenizer uses subword pieces, so outputs may contain inserted spaces. At the current training stage the model mostly echoes short fragments and inserts frequent morphemes; coherent sentences appear rarely. Treat these samples as proof that the pipeline runs end-to-end rather than evidence of fluent Tatar generation. Longer training or instruction-style fine-tuning is required for meaningful answers.
-
-## Repository Layout
-
-```
-01_prepare_data.py      # Corpus download / cleaning
-02_train_tokenizer.py   # BPE tokenizer training
-03_train.py             # GPT training loop
-model.py                # Architecture & optimizer helpers
-utils.py                # Loading, generation utilities
-quick_test.py           # CLI smoke test
-demo_inference.ipynb    # Notebook for inference demo
-run_pipeline.sh         # Helper script to run all stages
-restart_training.sh     # Convenience script for restarting training
-/
-??? data/processed/     # Train/val text datasets
-??? models/             # Checkpoints (best_model.pt, final_model.pt)
-??? tokenizer/          # Tokenizer JSON + config
-```
-
-## Inference from Python
-
-```python
-import torch
-from utils import load_model, load_tokenizer, generate_text
-
-model, _ = load_model("models/best_model.pt")
-tokenizer, tok_config = load_tokenizer("tokenizer")
-
-device = (
-    "cuda" if torch.cuda.is_available()
-    else "mps" if torch.backends.mps.is_available()
-    else "cpu"
-)
-model.to(device)
-
-prompt = "Казан турында бернич? ??мл? яз."
-output = generate_text(
-    model,
-    tokenizer,
-    tok_config,
-    prompt,
-    max_new_tokens=80,
-    temperature=0.8,
-    top_k=40,
-    device=device,
-)
-print(output)
-```
-
-## Deployment & Sharing
-
-- Upload `models/best_model.pt`, `models/final_model.pt`, and the `tokenizer/` directory to a storage service or the Hugging Face Hub.
-- `app.py` contains a Gradio skeleton for building a simple web demo.
-- See `DEPLOYMENT.md` and `QUICKSTART.md` for concise setup and sharing guidance.
 
 ## Data Source
 
 - Leipzig Wortschatz Tatar corpora — <https://wortschatz.uni-leipzig.de/en/download/tat>
-
-## Suggested Next Steps
-
-- Experiment with larger vocabularies or SentencePiece unigram tokenizers
-- Add automatic evaluation (perplexity, BLEU on held-out prompts)
-- Fine-tune with instruction/chat-style data for QA tasks
-- Extend the architecture (MoE blocks, SWA, rotary-aware flash attention)
-- Publish the final notebook and checkpoints to Hugging Face for wider access
-
-Happy hacking! Let me know if you build on this work or uncover interesting results.

@@ -58,12 +58,8 @@ def download_tatar_corpus():
     data_dir = Path("data/raw")
     data_dir.mkdir(parents=True, exist_ok=True)
     
-    # List of available Tatar language corpora
-    # Updated with correct filenames from https://wortschatz.uni-leipzig.de/en/download/tat
-    # Using only tat_mixed_2015_1M (192 MB, 1M sentences) for training
-    # Note: If file already exists, it will be used; otherwise script will try to download
     corpora = [
-        "tat_mixed_2015_1M.tar.gz",           # Mixed corpus - 1M sentences (~192 MB)
+        "tat_mixed_2015_1M.tar.gz",
     ]
     
     # Try multiple possible base URLs
@@ -88,7 +84,6 @@ def download_tatar_corpus():
                 print(f"File {corpus} exists but is corrupted, removing and re-downloading...")
                 file_path.unlink(missing_ok=True)
             
-        # Try downloading from different URLs
         downloaded = False
         for base_url in base_urls:
             url = f"{base_url}{corpus}"
@@ -163,7 +158,6 @@ def prepare_training_data():
     """Prepare data for training"""
     print("Preparing data for training...")
     
-    # Download corpora
     downloaded_files = download_tatar_corpus()
     
     if not downloaded_files:
@@ -225,7 +219,6 @@ def prepare_training_data():
     with open(output_dir / "val.txt", 'w', encoding='utf-8') as f:
         f.write('\n'.join(val_sentences))
     
-    # Statistics
     train_size_mb = os.path.getsize(output_dir / "train.txt") / (1024 * 1024)
     val_size_mb = os.path.getsize(output_dir / "val.txt") / (1024 * 1024)
     
@@ -243,14 +236,13 @@ def create_minimal_dataset():
     output_dir = Path("data/processed")
     output_dir.mkdir(parents=True, exist_ok=True)
     
-    # Sample Tatar sentences for testing
     sample_sentences = [
         "Tatar tele - turki tellar turkemen kera.",
         "Kazan shehere Tatarstan Respublikasining bashkalasy.",
         "Min tatarcha oyranem.",
         "Bu kitap bik kyzykly.",
         "Haller nichek?",
-    ] * 100  # Repeat for minimal size
+    ] * 100
     
     with open(output_dir / "train.txt", 'w', encoding='utf-8') as f:
         f.write('\n'.join(sample_sentences))
