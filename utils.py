@@ -101,14 +101,20 @@ def calculate_perplexity(
     import math
 
     device = _resolve_device(device)
+    model.to(device)
+    model.eval()
+
     encoded = tokenizer.encode(text)
     tokens = torch.tensor([encoded.ids], dtype=torch.long, device=device)
 
     if tokens.size(1) <= 1:
         return float("inf")
 
+    input_ids = tokens[:, :-1].clone()
+    target_ids = tokens[:, 1:].clone()
+
     with torch.no_grad():
-        _, loss = model(tokens[:, :-1], tokens[:, 1:])
+        _, loss = model(input_ids, target_ids)
 
     return math.exp(loss.item())
 

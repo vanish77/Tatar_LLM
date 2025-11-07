@@ -1,126 +1,94 @@
-# Быстрый старт за 5 минут
+# Quick Start Guide
 
-Краткая инструкция для быстрого запуска проекта.
+Follow the steps below to reproduce the full Tatar GPT pipeline from scratch. All commands assume macOS or Linux; adapt paths for Windows if needed.
 
-## Шаг 1: Установка (1 мин)
+## 1. Clone and set up the environment
 
 ```bash
-# Установите зависимости
+# clone the repository
+git clone https://github.com/vanish77/Tatar_LLM.git
+cd Tatar_LLM
+
+# create and activate virtual environment
+python3 -m venv venv
+source venv/bin/activate              # Windows: venv\Scripts\activate
+
+# install dependencies
+pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-## Шаг 2: Подготовка данных (2-5 мин)
+## 2. Prepare the dataset
 
 ```bash
-# Загрузка и подготовка татарского корпуса
+# download and clean the Leipzig Wortschatz Tatar corpus
 python 01_prepare_data.py
 ```
 
-Если загрузка не работает, скачайте вручную с:
-https://wortschatz.uni-leipzig.de/en/download/Tatar
+Outputs:
+- `data/processed/train.txt`
+- `data/processed/val.txt`
 
-## Шаг 3: Обучение токенизатора (1 мин)
+## 3. Train the tokenizer
 
 ```bash
-python 02_train_tokenizer.py
+python 02_train_tokenizer.py --vocab_size 8192 --min_frequency 2
 ```
 
-## Шаг 4: Обучение модели (30-60 мин)
+Outputs:
+- `tokenizer/tokenizer.json`
+- `tokenizer/config.json`
+
+## 4. Train the GPT model
 
 ```bash
-# Стандартное обучение
 python 03_train.py
-
-# Или быстрое (для тестирования, ~10 мин)
-# Измените max_iters на 2000 в 03_train.py
 ```
 
-## Шаг 5: Тестирование (1 мин)
+Key defaults:
+- 6 layers, 8 heads, 512 hidden size (?23M parameters)
+- Context length 256 tokens
+- 10 000 iterations, cosine LR schedule with warmup
+- Checkpoints saved to `models/`
+
+You can tweak hyperparameters by editing the top section of `03_train.py` or using the dataclasses in `config.py`.
+
+## 5. Smoke-test the model
 
 ```bash
-# Быстрый тест
 python quick_test.py
-
-# Или откройте Jupyter ноутбук
-jupyter notebook demo_inference.ipynb
-
-# Или интерактивный режим
-python utils.py
 ```
 
-## Альтернатива: Полный автоматический пайплайн
+This script loads `models/best_model.pt` and prints a few sample generations for sanity checking.
+
+## 6. Run the inference notebook (optional)
+
+Launch Jupyter or VS Code and open `demo_inference.ipynb` for richer experiments: perplexity checks, manual prompts, and sampling controls.
+
+## 7. Upload artifacts (optional)
+
+To publish the checkpoints and tokenizer on Hugging Face Hub:
 
 ```bash
-# Запустить всё одной командой (Mac/Linux)
-chmod +x run_pipeline.sh
-./run_pipeline.sh
+huggingface-cli login
+python -c "from huggingface_hub import HfApi; HfApi().create_repo('USERNAME/tatar-gpt', repo_type='model', exist_ok=True)"
+python -c "from huggingface_hub import HfApi; HfApi().upload_folder('models', 'USERNAME/tatar-gpt', repo_type='model')"
+python -c "from huggingface_hub import HfApi; HfApi().upload_folder('tokenizer', 'USERNAME/tatar-gpt', repo_type='model', path_in_repo='tokenizer')"
 ```
 
-## Если не хватает памяти
+Replace `USERNAME` with your Hugging Face handle.
 
-В файле `03_train.py` измените:
-
-```python
-batch_size = 16  # было 32
-use_gradient_checkpointing = True  # было False
-n_layer = 4  # было 6
-n_embd = 256  # было 512
-```
-
-## Если хотите быстрее обучить
-
-```python
-max_iters = 3000  # было 10000
-eval_interval = 200  # было 500
-```
-
-## Проверка результатов
-
-После обучения у вас должны быть:
-
-```
-? data/processed/train.txt - обучающие данные
-? data/processed/val.txt - валидационные данные
-? tokenizer/tokenizer.json - обученный токенизатор
-? models/best_model.pt - лучшая модель
-? models/final_model.pt - финальная модель
-```
-
-## Тестовая генерация
+## 8. Using the model in your own code
 
 ```python
 from utils import load_model, load_tokenizer, generate_text
 
-model, _ = load_model("models/best_model.pt")
+model, _ = load_model("models/best_model.pt", device="cpu")
 tokenizer, tok_config = load_tokenizer()
 
-text = generate_text(model, tokenizer, tok_config, "Казан ш???ре")
-print(text)
+prompt = "Казан турында с?йл?."
+response = generate_text(model, tokenizer, tok_config, prompt, max_new_tokens=60)
+print(response)
 ```
 
-## Частые проблемы
-
-### Ошибка "No module named ..."
-```bash
-pip install -r requirements.txt
-```
-
-### Ошибка "File not found: models/best_model.pt"
-Сначала запустите обучение: `python 03_train.py`
-
-### MPS backend out of memory
-Уменьшите `batch_size` в `03_train.py`
-
-### Слишком долго обучается
-Уменьшите `max_iters` или используйте конфигурацию `tiny`
-
-## Что дальше?
-
-1. Прочитайте [README.md](README.md) для подробной информации
-2. Посмотрите [EXAMPLES.md](EXAMPLES.md) для примеров работы
-3. Экспериментируйте с гиперпараметрами в [config.py](config.py)
-4. Пробуйте разные промпты в `demo_inference.ipynb`
-
-Удачи! ??
-
-
+That’s it! You now have a fully reproducible pipeline for training and testing a small GPT model on the Tatar language corpus. Feel free to iterate on the architecture, add instruction tuning, or extend the dataset for better fluency.
