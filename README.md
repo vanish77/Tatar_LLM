@@ -20,6 +20,11 @@ This repository contains the full training pipeline for a compact GPT-style lang
 - Cosine LR schedule with warmup plus gradient clipping
 - Robust data download/validation with automatic fallbacks
 
+## Model Artifacts
+
+- Trained checkpoints (`best_model.pt`, `final_model.pt`) and tokenizer files are available on Hugging Face: [ivankadchenko/tatar-gpt](https://huggingface.co/ivankadchenko/tatar-gpt)
+- Folder structure matches this repo (`models/`, `tokenizer/`) so you can download and drop them back into place if you want to skip training.
+
 ## End-to-End Pipeline
 
 1. **Environment**
