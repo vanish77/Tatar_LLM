@@ -1,0 +1,35 @@
+# Игнорируем большие файлы и модели для Cursor AI
+
+# Данные
+data/
+*.txt
+
+# Модели и чекпоинты
+models/
+checkpoints/
+*.pt
+*.pth
+*.bin
+*.ckpt
+
+# Токенизатор (файлы большие)
+tokenizer/*.json
+
+# Кэш и временные файлы
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# Виртуальные окружения
+venv/
+env/
+ENV/
+
+# Логи
+wandb/
+*.log
+
+# Системные файлы
+.DS_Store
+
+
